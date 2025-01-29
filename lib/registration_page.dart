@@ -1,4 +1,7 @@
-import 'dart:io';
+// ignore_for_file: sort_child_properties_last
+
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -12,7 +15,8 @@ class RegistrationPage extends StatefulWidget {
   _RegistrationPageState createState() => _RegistrationPageState();
 }
 
-class _RegistrationPageState extends State<RegistrationPage> with SingleTickerProviderStateMixin {
+class _RegistrationPageState extends State<RegistrationPage>
+    with SingleTickerProviderStateMixin {
   final _formKey1 = GlobalKey<FormState>(); // نموذج للمستخدم التجاري
   final _formKey2 = GlobalKey<FormState>(); // نموذج للمستخدم غير التجاري
   final _auth = FirebaseAuth.instance;
@@ -43,7 +47,8 @@ class _RegistrationPageState extends State<RegistrationPage> with SingleTickerPr
     });
 
     try {
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      UserCredential userCredential =
+          await _auth.createUserWithEmailAndPassword(
         email: _email,
         password: _password,
       );
@@ -91,7 +96,8 @@ class _RegistrationPageState extends State<RegistrationPage> with SingleTickerPr
       await userCredential.user!.sendEmailVerification();
 
       // الانتقال إلى صفحة التحقق
-      Navigator.pushReplacementNamed(context, '/verifyemail', arguments: _email);
+      Navigator.pushReplacementNamed(context, '/verifyemail',
+          arguments: _email);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Registration failed: $e')),
@@ -100,6 +106,12 @@ class _RegistrationPageState extends State<RegistrationPage> with SingleTickerPr
       setState(() {
         _isLoading = false;
       });
+    }
+
+    @override
+    Widget build(BuildContext context) {
+      // TODO: implement build
+      throw UnimplementedError();
     }
   }
 
@@ -159,7 +171,9 @@ class _RegistrationPageState extends State<RegistrationPage> with SingleTickerPr
           _image2 = null;
           _imageUrl1 = null;
           _imageUrl2 = null;
-          _userType = _tabController.index == 0 ? 'Commercial' : 'Non-commercial'; // تحديث نوع العميل
+          _userType = _tabController.index == 0
+              ? 'Commercial'
+              : 'Non-commercial'; // تحديث نوع العميل
         });
       }
     });
@@ -171,7 +185,12 @@ class _RegistrationPageState extends State<RegistrationPage> with SingleTickerPr
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('CVS Recycling'),
+          backgroundColor: Colors.white,
+          shadowColor: Color.fromARGB(0, 158, 158, 163),
+          title: Text(
+            'Sign up',
+            style: TextStyle(fontFamily: "os-bold", fontSize: 20),
+          ),
           centerTitle: true,
           leading: IconButton(
             icon: Icon(Icons.arrow_back),
@@ -180,6 +199,10 @@ class _RegistrationPageState extends State<RegistrationPage> with SingleTickerPr
             },
           ),
           bottom: TabBar(
+            labelColor: Color(0xff002F6C),
+            labelStyle: TextStyle(fontFamily: "os-bold", fontSize: 14),
+            dividerColor: Color(0xffCCCCCC),
+            indicatorColor: Color(0xffFFC107),
             controller: _tabController,
             tabs: [
               Tab(text: 'Commercial'),
@@ -189,7 +212,8 @@ class _RegistrationPageState extends State<RegistrationPage> with SingleTickerPr
         ),
         body: TabBarView(
           controller: _tabController,
-          physics: NeverScrollableScrollPhysics(), // تعطيل السحب بين علامات التبويب
+          physics:
+              NeverScrollableScrollPhysics(), // تعطيل السحب بين علامات التبويب
           children: [
             _buildRegistrationForm('Commercial', _formKey1),
             _buildRegistrationForm('Non-commercial', _formKey2),
@@ -200,17 +224,29 @@ class _RegistrationPageState extends State<RegistrationPage> with SingleTickerPr
   }
 
   Widget _buildRegistrationForm(String userType, GlobalKey<FormState> formKey) {
-    return Center(
+    return Container(
+      decoration: BoxDecoration(color: Colors.white),
+      margin: EdgeInsets.only(top: 2),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: formKey,
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              _buildFirstNameField(),
-              SizedBox(height: 10),
-              _buildLastNameField(),
+              Center(
+                child: Row(
+                  children: [
+                    Container(
+                      child: _buildFirstNameField(),
+                      width: 174,
+                    ),
+                    SizedBox(width: 10),
+                    Container(width: 174, child: _buildLastNameField()),
+                  ],
+                ),
+              ),
               SizedBox(height: 10),
               _buildEmailField(),
               SizedBox(height: 10),
@@ -226,17 +262,80 @@ class _RegistrationPageState extends State<RegistrationPage> with SingleTickerPr
               _isLoading
                   ? CircularProgressIndicator()
                   : ElevatedButton(
-                onPressed: () {
-                  if (formKey.currentState!.validate()) {
-                    formKey.currentState!.save();
-                    _register();
-                  }
-                },
-                child: Text('Register'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                  textStyle: TextStyle(fontSize: 18),
+                      onPressed: () {
+                        if (formKey.currentState!.validate()) {
+                          formKey.currentState!.save();
+                          _register();
+                        }
+                        AlertDialog(
+                          title: Text("Email verification!"),
+                          content:
+                              Text("Please check your email for verification"),
+                          actions: [
+                            ElevatedButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                child: Text("ok"))
+                          ],
+                        );
+                      },
+                      child: Center(
+                        child: Text(
+                          'Create account',
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontFamily: "os-semibold",
+                              color: Color(0xffFFFFFF)),
+                        ),
+                      ),
+                      style: ButtonStyle(
+                        backgroundColor:
+                            MaterialStateProperty.all(Color(0xff002F6C)),
+                        padding: MaterialStateProperty.all(EdgeInsets.all(16)),
+                        shape: MaterialStateProperty.all(RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        )),
+                      ),
+                    ),
+              SizedBox(height: 10),
+              Center(
+                child: Text(
+                  "_____________or sign up with_____________",
+                  style: TextStyle(
+                      fontFamily: "os-semibold",
+                      fontSize: 15,
+                      color: Color(0xffF7DC6F)),
+                ),
+              ),
+              SizedBox(
+                height: 15,
+              ),
+              Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      height: 50,
+                      width: 50,
+                      child: Image.asset("assets/img/google.png"),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(color: Color(0xffE8E8E8))),
+                    ),
+                    SizedBox(
+                      width: 15,
+                    ),
+                    Container(
+                      height: 50,
+                      width: 50,
+                      child: Image.asset("assets/img/Facebook.png"),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: Color(0xffE8E8E8)),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -248,80 +347,107 @@ class _RegistrationPageState extends State<RegistrationPage> with SingleTickerPr
 
   Widget _buildImagePicker(int imageNumber) {
     return FormField<XFile>(
-        validator: (value) {
-      if (value == null) {
-        return 'Please upload ${imageNumber == 1 ? 'ID' : 'License'} image';
-      }
-      return null;
-    },
-    builder: (FormFieldState<XFile> state) {
-    return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-    GestureDetector(
-    onTap: () async {
-    final picker = ImagePicker();
-    XFile? pickedImage = await picker.pickImage(source: ImageSource.gallery);
-    state.didChange(pickedImage);
-    setState(() {
-    if (imageNumber == 1) {
-    _image1 = pickedImage;
-    _imageUrl1 = pickedImage?.path;
-    } else if (imageNumber == 2) {
-    _image2 = pickedImage;
-    _imageUrl2 = pickedImage?.path;
-    }
-    });
-    },
-    child: Container(
-    padding: EdgeInsets.all(10),
-    decoration: BoxDecoration(
-    border: Border.all(color: Colors.grey),
-    borderRadius: BorderRadius.circular(10),
-    ),
-    child: Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-    Text(imageNumber == 1 ? 'Upload ID' : 'Upload License'),
-    SizedBox(width: 10),
-    Expanded(
-    child: Text(
-    imageNumber == 1
-        ? (_image1 == null ? "No image selected" : _image1!.name)
-        : (_image2 == null ? "No image selected" : _image2!.name),
-      overflow: TextOverflow.ellipsis,
-    ),
-    ),
-      Icon(Icons.upload_file),
-    ],
-    ),
-    ),
-    ),
-      if (state.hasError)
-        Padding(
-          padding: const EdgeInsets.only(top: 5.0),
-          child: Text(
-            state.errorText!,
-            style: TextStyle(
-              color: Colors.red,
-              fontSize: 12,
+      validator: (value) {
+        if (value == null) {
+          return 'Please upload ${imageNumber == 1 ? 'ID' : 'License'} image';
+        }
+        return null;
+      },
+      builder: (FormFieldState<XFile> state) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 10,
             ),
-          ),
-        ),
-    ],
-    );
-    },
+            GestureDetector(
+              onTap: () async {
+                final picker = ImagePicker();
+                XFile? pickedImage =
+                    await picker.pickImage(source: ImageSource.gallery);
+                state.didChange(pickedImage);
+                setState(() {
+                  if (imageNumber == 1) {
+                    _image1 = pickedImage;
+                    _imageUrl1 = pickedImage?.path;
+                  } else if (imageNumber == 2) {
+                    _image2 = pickedImage;
+                    _imageUrl2 = pickedImage?.path;
+                  }
+                });
+              },
+              child: Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      imageNumber == 1 ? 'Upload ID' : 'Upload License',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: "os-semibold",
+                          color: Color(0xff333333)),
+                    ),
+                    SizedBox(width: 20),
+                    Expanded(
+                      child: Text(
+                        imageNumber == 1
+                            ? (_image1 == null
+                                ? "No image selected"
+                                : _image1!.name)
+                            : (_image2 == null
+                                ? "No image selected"
+                                : _image2!.name),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Icon(
+                      Icons.upload_file,
+                      color: Color(0xFFD6D4D4),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (state.hasError)
+              Padding(
+                padding: const EdgeInsets.only(top: 5.0),
+                child: Text(
+                  state.errorText!,
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
   Widget _buildFirstNameField() {
     return TextFormField(
       decoration: InputDecoration(
-        labelText: 'First Name',
+        prefixIcon: Icon(
+          Icons.person,
+          color: Color.fromARGB(255, 214, 212, 212),
+        ),
+        hintText: 'First Name',
+        hintStyle: TextStyle(
+            fontSize: 13, fontFamily: "os-semibold", color: Color(0xff333333)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
         ),
-        errorStyle: TextStyle(color: Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: BorderSide(color: Color(0xffF7DC6F), width: 1.8)),
+        errorStyle:
+            TextStyle(color: Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
       ),
       validator: (value) {
         if (value!.isEmpty) {
@@ -336,11 +462,23 @@ class _RegistrationPageState extends State<RegistrationPage> with SingleTickerPr
   Widget _buildLastNameField() {
     return TextFormField(
       decoration: InputDecoration(
-        labelText: 'Last Name',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
+        hintText: 'Last Name',
+        hintStyle: TextStyle(
+            fontSize: 13, fontFamily: "os-semibold", color: Color(0xff333333)),
+        prefixIcon: Icon(
+          Icons.person,
+          color: Color.fromARGB(255, 214, 212, 212),
         ),
-        errorStyle: TextStyle(color: Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
+
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: BorderSide(color: Color(0xffCCCCCC))),
+
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: BorderSide(color: Color(0xffF7DC6F), width: 2)),
+        errorStyle:
+            TextStyle(color: Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
       ),
       validator: (value) {
         if (value!.isEmpty) {
@@ -355,11 +493,21 @@ class _RegistrationPageState extends State<RegistrationPage> with SingleTickerPr
   Widget _buildEmailField() {
     return TextFormField(
       decoration: InputDecoration(
-        labelText: 'Email',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
+        prefixIcon: Icon(
+          Icons.email,
+          color: Color.fromARGB(255, 214, 212, 212),
         ),
-        errorStyle: TextStyle(color: Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
+        hintText: 'Email',
+        hintStyle: TextStyle(
+            fontSize: 13, fontFamily: "os-semibold", color: Color(0xff333333)),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: BorderSide(color: Color(0xffF7DC6F), width: 1.8)),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: BorderSide(color: Colors.deepPurple)),
+        errorStyle:
+            TextStyle(color: Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
       ),
       validator: (value) {
         if (value!.isEmpty || !value.contains('@')) {
@@ -377,19 +525,34 @@ class _RegistrationPageState extends State<RegistrationPage> with SingleTickerPr
       children: [
         TextFormField(
           decoration: InputDecoration(
-            labelText: 'Password',
+            hintText: 'Password',
+            hintStyle: TextStyle(
+                fontSize: 13,
+                fontFamily: "os-semibold",
+                color: Color(0xff333333)),
+            prefixIcon: Icon(
+              Icons.password_sharp,
+              color: Color.fromARGB(255, 214, 212, 212),
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10.0),
             ),
             suffixIcon: IconButton(
-              icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
+              icon: Icon(
+                _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                color: Color(0xFFD6D4D4),
+              ),
               onPressed: () {
                 setState(() {
                   _isPasswordVisible = !_isPasswordVisible;
                 });
               },
             ),
-            errorStyle: TextStyle(color: Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+                borderSide: BorderSide(color: Color(0xffF7DC6F), width: 2)),
+            errorStyle: TextStyle(
+                color: Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
           ),
           obscureText: !_isPasswordVisible,
           validator: (value) {
@@ -397,7 +560,9 @@ class _RegistrationPageState extends State<RegistrationPage> with SingleTickerPr
               return 'Password is required';
             } else if (value.length < 8) {
               return 'Password must be at least 8 characters';
-            } else if (!RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$').hasMatch(value)) {
+            } else if (!RegExp(
+                    r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$')
+                .hasMatch(value)) {
               return 'Password must include letters, numbers, and special characters';
             }
             return null;
@@ -414,8 +579,7 @@ class _RegistrationPageState extends State<RegistrationPage> with SingleTickerPr
           },
           onSaved: (value) => _password = value!,
         ),
-        if (_password.isNotEmpty)
-          SizedBox(height: 5),
+        if (_password.isNotEmpty) SizedBox(height: 5),
         if (_password.isNotEmpty)
           Text(
             'Password Strength: $_passwordStrength',
@@ -428,19 +592,32 @@ class _RegistrationPageState extends State<RegistrationPage> with SingleTickerPr
   Widget _buildConfirmPasswordField() {
     return TextFormField(
       decoration: InputDecoration(
-        labelText: 'Confirm Password',
+        hintText: 'Confirm Password',
+        hintStyle: TextStyle(
+            fontSize: 13, fontFamily: "os-semibold", color: Color(0xff333333)),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: BorderSide(color: Color(0xffF7DC6F), width: 2)),
+        prefixIcon: Icon(
+          Icons.password,
+          color: Color.fromARGB(255, 214, 212, 212),
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
         ),
         suffixIcon: IconButton(
-          icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
+          icon: Icon(
+            _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+            color: Color(0xFFD6D4D4),
+          ),
           onPressed: () {
             setState(() {
               _isPasswordVisible = !_isPasswordVisible;
             });
           },
         ),
-        errorStyle: TextStyle(color: Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
+        errorStyle:
+            TextStyle(color: Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
       ),
       obscureText: !_isPasswordVisible,
       validator: (value) {
@@ -472,11 +649,24 @@ class _RegistrationPageState extends State<RegistrationPage> with SingleTickerPr
         Expanded(
           child: TextFormField(
             decoration: InputDecoration(
-              labelText: 'Phone Number',
+              hintStyle: TextStyle(
+                  fontSize: 13,
+                  fontFamily: "os-semibold",
+                  color: Color(0xff333333)),
+              prefixIcon: Icon(
+                Icons.phone,
+                color: Color.fromARGB(255, 214, 212, 212),
+              ),
+              focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                  borderSide: BorderSide(color: Color(0xffF7DC6F), width: 2)),
+
+              hintText: 'Phone Number',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10.0),
               ),
-              errorStyle: TextStyle(color: Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
+              errorStyle: TextStyle(
+                  color: Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
             ),
             keyboardType: TextInputType.phone,
             validator: (value) {

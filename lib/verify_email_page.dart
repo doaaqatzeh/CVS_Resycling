@@ -12,6 +12,12 @@ class VerifyEmailPage extends StatefulWidget {
 }
 
 class _VerifyEmailPageState extends State<VerifyEmailPage> {
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    throw UnimplementedError();
+  }
+
   bool _isEmailVerified = false;
   bool _isLoading = false;
   String _message = '';
@@ -38,7 +44,8 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
   Future<void> _loadVerificationEmailStatus() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      _isVerificationEmailSent = prefs.getBool('isVerificationEmailSent') ?? false;
+      _isVerificationEmailSent =
+          prefs.getBool('isVerificationEmailSent') ?? false;
     });
   }
 
@@ -52,74 +59,75 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
     await prefs.setString('currentPage', '/verifyemail');
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final String email = widget.email;
+  // @override
+  // Widget build(BuildContext context) {
+  //   final String email = widget.email;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Verify Your Email'),
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Text(
-                'Please verify your email address: $email',
-                style: TextStyle(fontSize: 18),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _isLoading ? null : () => _handleButtonPress(context, email),
-                child: _isLoading
-                    ? CircularProgressIndicator(color: Colors.white)
-                    : Text(_isEmailVerified ? 'Continue' : 'Send Verification Email'),
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                ),
-              ),
-              if (_message.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 20),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-                    color: _isEmailVerified ? Colors.blue : Colors.green,
-                    child: Text(
-                      _message,
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  //   return Scaffold(
+  //     appBar: AppBar(
+  //       title: Text('Verify Your Email'),
+  //       centerTitle: true,
+  //       leading: IconButton(
+  //         icon: Icon(Icons.arrow_back),
+  //         onPressed: () {
+  //           Navigator.pop(context);
+  //         },
+  //       ),
+  //     ),
+  //     body: Center(
+  //       child: Padding(
+  //         padding: const EdgeInsets.all(16.0),
+  //         child: Column(
+  //           mainAxisAlignment: MainAxisAlignment.center,
+  //           children: <Widget>[
+  //             Text(
+  //               'Please verify your email address: $email',
+  //               style: TextStyle(fontSize: 18),
+  //               textAlign: TextAlign.center,
+  //             ),
+  //             SizedBox(height: 20),
+  //             ElevatedButton(
+  //               onPressed: _isLoading ? null : () => _handleButtonPress(context, email),
+  //               child: _isLoading
+  //                   ? CircularProgressIndicator(color: Colors.white)
+  //                   : Text(_isEmailVerified ? 'Continue' : 'Send Verification Email'),
+  //               style: ElevatedButton.styleFrom(
+  //                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+  //               ),
+  //             ),
+  //             if (_message.isNotEmpty)
+  //               Padding(
+  //                 padding: const EdgeInsets.only(top: 20),
+  //                 child: Container(
+  //                   padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+  //                   color: _isEmailVerified ? Colors.blue : Colors.green,
+  //                   child: Text(
+  //                     _message,
+  //                     style: TextStyle(color: Colors.white, fontSize: 16),
+  //                     textAlign: TextAlign.center,
+  //                   ),
+  //                 ),
+  //               ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
-  Future<void> _handleButtonPress(BuildContext context, String email) async {
-    if (_isEmailVerified) {
-      Navigator.pushReplacementNamed(context, '/thankyou', arguments: FirebaseAuth.instance.currentUser?.displayName);
-    } else {
-      if (!_isVerificationEmailSent) {
-        await _sendVerificationEmail(context, email);
-      }
-      await _checkEmailVerified(context);
-    }
-  }
+  // Future<void> _handleButtonPress(BuildContext context, String email) async {
+  //   if (_isEmailVerified) {
+  //     Navigator.pushReplacementNamed(context, '/thankyou', arguments: FirebaseAuth.instance.currentUser?.displayName);
+  //   } else {
+  //     if (!_isVerificationEmailSent) {
+  //       await _sendVerificationEmail(context, email);
+  //     }
+  //     await _checkEmailVerified(context);
+  //   }
+  // }
 
-  Future<void> _sendVerificationEmail(BuildContext context, String email) async {
+  Future<void> _sendVerificationEmail(
+      BuildContext context, String email) async {
     setState(() {
       _isLoading = true;
     });
@@ -129,7 +137,8 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
       if (user != null && !user.emailVerified) {
         await user.sendEmailVerification();
         setState(() {
-          _message = 'Verification link sent to $email. Please check your inbox!';
+          _message =
+              'Verification link sent to $email. Please check your inbox!';
           _isVerificationEmailSent = true;
         });
         await _saveVerificationEmailStatus(true);
@@ -144,7 +153,8 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
         setState(() {
           _message = 'Email is already verified!';
         });
-        Navigator.pushReplacementNamed(context, '/thankyou', arguments: user?.displayName);
+        Navigator.pushReplacementNamed(context, '/thankyou',
+            arguments: user?.displayName);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -165,7 +175,8 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
         _isEmailVerified = true;
         _message = 'Email verified successfully!';
       });
-      Navigator.pushReplacementNamed(context, '/thankyou', arguments: user.displayName);
+      Navigator.pushReplacementNamed(context, '/thankyou',
+          arguments: user.displayName);
     } else {
       setState(() {
         _message = 'Email not verified yet. Please check your inbox.';
