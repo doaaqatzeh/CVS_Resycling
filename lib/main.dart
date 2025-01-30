@@ -1,4 +1,5 @@
 import 'package:cvsr/login_page.dart';
+import 'package:cvsr/main_page.dart';
 import 'package:cvsr/welcom_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -21,6 +22,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
+      // home: MainPage(),
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {

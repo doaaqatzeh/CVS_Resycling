@@ -238,12 +238,18 @@ class _RegistrationPageState extends State<RegistrationPage>
               Center(
                 child: Row(
                   children: [
-                    Container(
-                      child: _buildFirstNameField(),
-                      width: 174,
+                    Center(
+                      child: Container(
+                        child: _buildFirstNameField(),
+                        width: MediaQuery.of(context).size.width * 0.45,
+                      ),
                     ),
-                    SizedBox(width: 10),
-                    Container(width: 174, child: _buildLastNameField()),
+                    SizedBox(width: 5),
+                    Center(
+                      child: Container(
+                          width: MediaQuery.of(context).size.width * 0.45,
+                          child: _buildLastNameField()),
+                    ),
                   ],
                 ),
               ),
@@ -263,22 +269,22 @@ class _RegistrationPageState extends State<RegistrationPage>
                   ? CircularProgressIndicator()
                   : ElevatedButton(
                       onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text(
+                            'Please check your email for verification',
+                            style: TextStyle(
+                              fontFamily: "os-semibold",
+                              fontSize: 14,
+                            ),
+                          )),
+                        );
+
                         if (formKey.currentState!.validate()) {
                           formKey.currentState!.save();
                           _register();
                         }
-                        AlertDialog(
-                          title: Text("Email verification!"),
-                          content:
-                              Text("Please check your email for verification"),
-                          actions: [
-                            ElevatedButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: Text("ok"))
-                          ],
-                        );
+                        Navigator.pushNamed(context, "/login");
                       },
                       child: Center(
                         child: Text(
@@ -298,46 +304,6 @@ class _RegistrationPageState extends State<RegistrationPage>
                         )),
                       ),
                     ),
-              SizedBox(height: 10),
-              Center(
-                child: Text(
-                  "_____________or sign up with_____________",
-                  style: TextStyle(
-                      fontFamily: "os-semibold",
-                      fontSize: 15,
-                      color: Color(0xffF7DC6F)),
-                ),
-              ),
-              SizedBox(
-                height: 15,
-              ),
-              Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      height: 50,
-                      width: 50,
-                      child: Image.asset("assets/img/google.png"),
-                      decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(30),
-                          border: Border.all(color: Color(0xffE8E8E8))),
-                    ),
-                    SizedBox(
-                      width: 15,
-                    ),
-                    Container(
-                      height: 50,
-                      width: 50,
-                      child: Image.asset("assets/img/Facebook.png"),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: Color(0xffE8E8E8)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
@@ -510,7 +476,7 @@ class _RegistrationPageState extends State<RegistrationPage>
             TextStyle(color: Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
       ),
       validator: (value) {
-        if (value!.isEmpty || !value.contains('@')) {
+        if (value!.isEmpty || !value.contains('@') || !value.endsWith(".com")) {
           return 'Please enter a valid email';
         }
         return null;

@@ -20,10 +20,37 @@ class _LoginPageState extends State<LoginPage> {
   bool isSwithed = false;
   bool _isPasswordVisible = false;
   bool? isChecked = false;
+  String _email = '';
+  String _passwordStrength = '';
+  String _password = '';
 
   @override
   Widget build(BuildContext context) {
+    void _checkPasswordStrength(String value) {
+      if (value.length < 8) {
+        _passwordStrength = 'Weak';
+      } else if (value.length < 12) {
+        _passwordStrength = 'Medium';
+      } else {
+        _passwordStrength = 'Strong';
+      }
+    }
+
+    Color _getPasswordStrengthColor() {
+      switch (_passwordStrength) {
+        case 'Weak':
+          return Colors.red;
+        case 'Medium':
+          return Colors.orange;
+        case 'Strong':
+          return Colors.green;
+        default:
+          return Colors.grey;
+      }
+    }
+
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         shadowColor: Color.fromARGB(0, 158, 158, 163),
@@ -71,7 +98,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               SizedBox(
-                height: 10,
+                height: 25,
               ),
               Padding(
                 padding: const EdgeInsets.only(left: 30, top: 3, right: 30),
@@ -172,9 +199,8 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       )
                     else
-                      TextField(
+                      TextFormField(
                         decoration: InputDecoration(
-                          contentPadding: EdgeInsets.all(1),
                           prefixIcon: Icon(
                             Icons.email,
                             color: Color.fromARGB(255, 214, 212, 212),
@@ -195,13 +221,22 @@ class _LoginPageState extends State<LoginPage> {
                               color: Colors
                                   .red), // تعيين لون رسالة الخطأ إلى الأحمر
                         ),
+                        validator: (value) {
+                          if (value!.isEmpty ||
+                              !value.contains('@') ||
+                              !value.endsWith(".com") ||
+                              !value.endsWith(".net")) {
+                            return 'Please enter a valid email';
+                          }
+                          return null;
+                        },
+                        onSaved: (value) => _email = value!,
                       ),
                     SizedBox(
                       height: 10,
                     ),
-                    TextField(
+                    TextFormField(
                       decoration: InputDecoration(
-                        contentPadding: EdgeInsets.all(1),
                         hintText: 'Password',
                         hintStyle: TextStyle(
                             fontSize: 13,
@@ -235,7 +270,37 @@ class _LoginPageState extends State<LoginPage> {
                             color:
                                 Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
                       ),
+                      obscureText: !_isPasswordVisible,
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Password is required';
+                        } else if (value.length < 8) {
+                          return 'Password must be at least 8 characters';
+                        } else if (!RegExp(
+                                r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$')
+                            .hasMatch(value)) {
+                          return 'Password must include letters, numbers, and special characters';
+                        }
+                        return null;
+                      },
+                      onChanged: (value) {
+                        setState(() {
+                          _password = value; // حفظ كلمة المرور في المتغير
+                          if (value.isNotEmpty) {
+                            _checkPasswordStrength(value);
+                          } else {
+                            _passwordStrength = '';
+                          }
+                        });
+                      },
+                      onSaved: (value) => _password = value!,
                     ),
+                    if (_password.isNotEmpty) SizedBox(height: 5),
+                    if (_password.isNotEmpty)
+                      Text(
+                        'Password Strength: $_passwordStrength',
+                        style: TextStyle(color: _getPasswordStrengthColor()),
+                      ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -263,7 +328,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         InkWell(
                           child: Text(
-                            "forgrt Password?",
+                            "forget Password?",
                             style: TextStyle(
                                 fontFamily: "os-semibold",
                                 fontSize: 13,
@@ -274,7 +339,18 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text(
+                            'Please check your email',
+                            style: TextStyle(
+                              fontFamily: "os-semibold",
+                              fontSize: 14,
+                            ),
+                          )),
+                        );
+                      },
                       child: Center(
                         child: Text(
                           'Log in',
@@ -297,7 +373,9 @@ class _LoginPageState extends State<LoginPage> {
                       height: 6,
                     ),
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/regesitration');
+                      },
                       child: Center(
                         child: Text(
                           'Create account',
@@ -319,45 +397,6 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     SizedBox(
                       height: 3,
-                    ),
-                    Center(
-                      child: Text(
-                        "______________or sign up with______________",
-                        style: TextStyle(
-                            fontFamily: "os-semibold",
-                            fontSize: 13,
-                            color: Color(0xffF7DC6F)),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            height: 40,
-                            width: 40,
-                            child: Image.asset("assets/img/google.png"),
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(30),
-                                border: Border.all(color: Color(0xffE8E8E8))),
-                          ),
-                          SizedBox(
-                            width: 15,
-                          ),
-                          Container(
-                            height: 40,
-                            width: 40,
-                            child: Image.asset("assets/img/Facebook.png"),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(30),
-                              border: Border.all(color: Color(0xffE8E8E8)),
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
                   ],
                 ),
