@@ -1,6 +1,7 @@
 // ignore_for_file: sort_child_properties_last
 
 import 'package:country_code_picker/country_code_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
@@ -20,9 +21,57 @@ class _LoginPageState extends State<LoginPage> {
   bool isSwithed = false;
   bool _isPasswordVisible = false;
   bool? isChecked = false;
+  bool _isLoading = false;
+  final _formKey = GlobalKey<FormState>();
   String _email = '';
   String _passwordStrength = '';
   String _password = '';
+  void _login() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // محاولة تسجيل الدخول
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _email,
+        password: _password,
+      );
+
+      // التحقق مما إذا كان البريد الإلكتروني قد تم التحقق منه
+      if (!userCredential.user!.emailVerified) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please verify your email')),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // الانتقال إلى الصفحة الرئيسية إذا كان التحقق ناجحًا
+      Navigator.pushReplacementNamed(context, '/home');
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Email does not exist')),
+        );
+      } else if (e.code == 'wrong-password') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Incorrect password')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login failed: $e')),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -340,16 +389,20 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text(
-                            'Please check your email',
-                            style: TextStyle(
-                              fontFamily: "os-semibold",
-                              fontSize: 14,
-                            ),
-                          )),
-                        );
+                        if (_formKey.currentState!.validate()) {
+                          _formKey.currentState!.save();
+                          _login();
+                        }
+                        // ScaffoldMessenger.of(context).showSnackBar(
+                        //   SnackBar(
+                        //       content: Text(
+                        //     'Please check your email',
+                        //     style: TextStyle(
+                        //       fontFamily: "os-semibold",
+                        //       fontSize: 14,
+                        //     ),
+                        //   )),
+                        // );
                       },
                       child: Center(
                         child: Text(

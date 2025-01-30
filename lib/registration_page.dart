@@ -1,5 +1,6 @@
 // ignore_for_file: sort_child_properties_last
 
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -45,7 +46,6 @@ class _RegistrationPageState extends State<RegistrationPage>
     setState(() {
       _isLoading = true;
     });
-
     try {
       UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
@@ -92,12 +92,28 @@ class _RegistrationPageState extends State<RegistrationPage>
       });
 
       await userCredential.user!.updateDisplayName(_firstName);
-
       await userCredential.user!.sendEmailVerification();
 
-      // الانتقال إلى صفحة التحقق
-      Navigator.pushReplacementNamed(context, '/verifyemail',
-          arguments: _email);
+      // جدولة حذف الحساب إذا لم يتم التفعيل خلال دقيقتين
+      Timer(Duration(minutes: 2), () async {
+        try {
+          User? user = _auth.currentUser;
+          if (user != null && !user.emailVerified) {
+            String uid = user.uid;
+            // حذف البيانات المرتبطة بالمستخدم في Firestore
+            await _firestore.collection('users').doc(uid).delete();
+            // حذف المستخدم من Firebase Authentication
+            await user.delete();
+            print(
+                'User and associated data have been deleted due to email not verified.');
+          }
+        } catch (e) {
+          print('Error while deleting user or associated data: $e');
+        }
+      });
+
+      // الانتقال إلى صفحة تسجيل الدخول بعد إرسال رابط التفعيل
+      Navigator.pushReplacementNamed(context, '/login');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Registration failed: $e')),
@@ -238,18 +254,14 @@ class _RegistrationPageState extends State<RegistrationPage>
               Center(
                 child: Row(
                   children: [
-                    Center(
-                      child: Container(
-                        child: _buildFirstNameField(),
-                        width: MediaQuery.of(context).size.width * 0.45,
-                      ),
+                    Container(
+                      child: _buildFirstNameField(),
+                      width: MediaQuery.of(context).size.width * 0.45,
                     ),
                     SizedBox(width: 5),
-                    Center(
-                      child: Container(
-                          width: MediaQuery.of(context).size.width * 0.45,
-                          child: _buildLastNameField()),
-                    ),
+                    Container(
+                        width: MediaQuery.of(context).size.width * 0.45,
+                        child: _buildLastNameField()),
                   ],
                 ),
               ),
@@ -269,6 +281,10 @@ class _RegistrationPageState extends State<RegistrationPage>
                   ? CircularProgressIndicator()
                   : ElevatedButton(
                       onPressed: () {
+                        if (formKey.currentState!.validate()) {
+                          formKey.currentState!.save();
+                          _register();
+                        }
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                               content: Text(
@@ -279,11 +295,6 @@ class _RegistrationPageState extends State<RegistrationPage>
                             ),
                           )),
                         );
-
-                        if (formKey.currentState!.validate()) {
-                          formKey.currentState!.save();
-                          _register();
-                        }
                         Navigator.pushNamed(context, "/login");
                       },
                       child: Center(
@@ -304,6 +315,7 @@ class _RegistrationPageState extends State<RegistrationPage>
                         )),
                       ),
                     ),
+              SizedBox(height: 10),
             ],
           ),
         ),
