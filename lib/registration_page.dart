@@ -254,14 +254,18 @@ class _RegistrationPageState extends State<RegistrationPage>
               Center(
                 child: Row(
                   children: [
-                    Container(
-                      child: _buildFirstNameField(),
-                      width: MediaQuery.of(context).size.width * 0.45,
+                    Flexible(
+                      child: Container(
+                        child: _buildFirstNameField(),
+                        width: MediaQuery.of(context).size.width * 0.45,
+                      ),
                     ),
                     SizedBox(width: 5),
-                    Container(
-                        width: MediaQuery.of(context).size.width * 0.45,
-                        child: _buildLastNameField()),
+                    Flexible(
+                      child: Container(
+                          width: MediaQuery.of(context).size.width * 0.45,
+                          child: _buildLastNameField()),
+                    ),
                   ],
                 ),
               ),
@@ -488,7 +492,7 @@ class _RegistrationPageState extends State<RegistrationPage>
             TextStyle(color: Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
       ),
       validator: (value) {
-        if (value!.isEmpty || !value.contains('@') || !value.endsWith(".com")) {
+        if (value!.isEmpty || !value.contains('@')) {
           return 'Please enter a valid email';
         }
         return null;
