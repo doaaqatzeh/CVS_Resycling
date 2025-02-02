@@ -30,70 +30,260 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        actions: [
-          IconButton(
-              style: ButtonStyle(
-                  backgroundColor:
-                      WidgetStateProperty.all(const Color(0xffC5D9F3)),
-                  iconSize: WidgetStateProperty.all(30)),
-              onPressed: () {
-                showSearch(context: context, delegate: dataSearch());
-              },
-              icon: Icon(
-                Icons.search,
-                color: Colors.white,
-              )),
-        ],
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(color: Colors.grey, offset: Offset(0, 2), blurRadius: 4),
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          actions: [
+            IconButton(
+                style: ButtonStyle(iconSize: WidgetStateProperty.all(30)),
+                onPressed: () {
+                  showSearch(context: context, delegate: dataSearch());
+                },
+                icon: Icon(
+                  Icons.search,
+                  color: Colors.white,
+                )),
           ],
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(30), topRight: Radius.circular(30)),
-          color: Colors.white,
         ),
-        child: Padding(
-          padding: EdgeInsets.all(10),
-          child: GNav(
-              gap: 4,
-              padding: EdgeInsets.all(16),
-              backgroundColor: Colors.white,
-              textStyle: TextStyle(fontFamily: "os-bold", fontSize: 14),
-              color: Color(0xffCCCCCC),
-              activeColor: Color(0xff333333),
-              tabBackgroundColor: Color(0xffC5D9F3),
-              tabs: const [
-                GButton(
-                  icon: Icons.home_filled,
-                  text: "Home",
-                ),
-                GButton(
-                  icon: Icons.request_page_outlined,
-                  text: "Request",
-                ),
-                GButton(
-                  icon: Icons.person_2_outlined,
-                  text: "Profile",
-                ),
-              ]),
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.grey, offset: Offset(0, 2), blurRadius: 4),
+            ],
+            borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(30), topRight: Radius.circular(30)),
+            color: Colors.white,
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(10),
+            child: GNav(
+                gap: 4,
+                padding: EdgeInsets.all(16),
+                backgroundColor: Colors.white,
+                textStyle: TextStyle(fontFamily: "os-bold", fontSize: 14),
+                color: Color(0xffCCCCCC),
+                activeColor: Color(0xff333333),
+                tabBackgroundColor: Color(0xffC5D9F3),
+                tabs: const [
+                  GButton(
+                    icon: Icons.home_filled,
+                    text: "Home",
+                  ),
+                  GButton(
+                    icon: Icons.request_page_outlined,
+                    text: "Request",
+                  ),
+                  GButton(
+                    icon: Icons.person_2_outlined,
+                    text: "Profile",
+                  ),
+                ]),
+          ),
         ),
-      ),
-      body: GoogleMap(
-        mapType: MapType.hybrid,
-        initialCameraPosition: _kGooglePlex,
-        onMapCreated: (GoogleMapController controller) {
-          _controller.complete(controller);
-        },
-      ),
-      // floatingActionButton: FloatingActionButton.extended(
-      //   onPressed: _goToTheLake,
-      //   label: const Text('To the lake!'),
-      //   icon: const Icon(Icons.directions_boat),
-      // ),
-    );
+        body: Center(
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 270,
+                    height: 50,
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0xffF1F1F1),
+                            offset: Offset(0, 2),
+                            blurRadius: 4,
+                          )
+                        ]),
+                    child: TextField(
+                      decoration: InputDecoration(
+                          labelText: "search....",
+                          labelStyle: TextStyle(
+                              color: Color(0xff002F6C),
+                              fontFamily: "os-bold",
+                              fontSize: 13),
+                          border: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.white),
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(30))),
+                          prefixIcon: IconButton(
+                              onPressed: () {
+                                showSearch(
+                                    context: context, delegate: dataSearch());
+                              },
+                              icon: Icon(
+                                Icons.search_rounded,
+                                color: Color(0xff002F6C),
+                              ))),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  Container(
+                    padding: EdgeInsets.all(9),
+                    decoration: BoxDecoration(
+                        color: Color(0xffF1F1F1),
+                        borderRadius: BorderRadius.all(Radius.circular(50)),
+                        border: Border.all(color: Color(0xffCCCCCC))),
+                    child: Icon(
+                      Icons.person,
+                      color: Color(0xffCCCCCC),
+                      size: 40,
+                    ),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 430, right: 16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    FloatingActionButton(
+                      backgroundColor: Colors.white,
+                      onPressed: () {},
+                      child: Icon(
+                        Icons.gps_fixed,
+                        size: 30,
+                        color: Color(0xff2963AF),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              SingleChildScrollView(
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        style: ButtonStyle(
+                            backgroundColor:
+                                MaterialStateProperty.all(Colors.white),
+                            padding:
+                                MaterialStateProperty.all(EdgeInsets.all(14)),
+                            shape: MaterialStateProperty.all(
+                                RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    side: BorderSide(
+                                      color: Color(0xffE8E8E8),
+                                    ))),
+                            shadowColor: WidgetStateProperty.all(
+                                Color.fromARGB(255, 213, 211, 211))),
+                        onPressed: () {},
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.home_filled,
+                              color: Color(0xff333333),
+                              size: 24,
+                            ),
+                            Text(
+                              "Home",
+                              style: TextStyle(
+                                  fontFamily: "os-bold",
+                                  color: Color(0xff333333)),
+                            )
+                          ],
+                        ),
+                      ),
+                      SizedBox(
+                        width: 15,
+                      ),
+                      ElevatedButton(
+                        style: ButtonStyle(
+                            backgroundColor:
+                                MaterialStateProperty.all(Colors.white),
+                            padding:
+                                MaterialStateProperty.all(EdgeInsets.all(14)),
+                            shape: MaterialStateProperty.all(
+                                RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    side: BorderSide(
+                                      color: Color(0xffE8E8E8),
+                                    ))),
+                            shadowColor: WidgetStateProperty.all(
+                                Color.fromARGB(255, 213, 211, 211))),
+                        onPressed: () {},
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.store_rounded,
+                              color: Color(0xff333333),
+                              size: 24,
+                            ),
+                            Text(
+                              "Store1",
+                              style: TextStyle(
+                                  fontFamily: "os-bold",
+                                  color: Color(0xff333333)),
+                            )
+                          ],
+                        ),
+                      ),
+                      SizedBox(
+                        width: 15,
+                      ),
+                      ElevatedButton(
+                        style: ButtonStyle(
+                            backgroundColor:
+                                MaterialStateProperty.all(Colors.white),
+                            padding:
+                                MaterialStateProperty.all(EdgeInsets.all(14)),
+                            shape: MaterialStateProperty.all(
+                                RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    side: BorderSide(
+                                      color: Color(0xffE8E8E8),
+                                    ))),
+                            shadowColor: WidgetStateProperty.all(
+                                Color.fromARGB(255, 213, 211, 211))),
+                        onPressed: () {},
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.store_rounded,
+                              color: Color(0xff333333),
+                              size: 24,
+                            ),
+                            Text(
+                              "Store1",
+                              style: TextStyle(
+                                  fontFamily: "os-bold",
+                                  color: Color(0xff333333)),
+                            )
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            ],
+          ),
+        )
+        // GoogleMap(
+        //   mapType: MapType.hybrid,
+        //   initialCameraPosition: _kGooglePlex,
+        //   onMapCreated: (GoogleMapController controller) {
+        //     _controller.complete(controller);
+        //   },
+        // ),
+        // floatingActionButton: FloatingActionButton.extended(
+        //   onPressed: _goToTheLake,
+        //   label: const Text('To the lake!'),
+        //   icon: const Icon(Icons.directions_boat),
+        // ),
+        );
   }
 
   Future<void> _goToTheLake() async {

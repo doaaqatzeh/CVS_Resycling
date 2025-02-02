@@ -31,6 +31,7 @@ class MyApp extends StatelessWidget {
         '/verifyemail': (context) => VerifyEmailPage(email: ''),
         '/regesitration': (context) => RegistrationPage(),
         '/login': (context) => LoginPage(),
+        '/home': (context) => MainPage(),
       },
     );
   }
