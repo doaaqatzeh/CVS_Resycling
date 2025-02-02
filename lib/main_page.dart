@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cvsr/dataSearch.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
@@ -29,6 +30,22 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        actions: [
+          IconButton(
+              style: ButtonStyle(
+                  backgroundColor:
+                      WidgetStateProperty.all(const Color(0xffC5D9F3)),
+                  iconSize: WidgetStateProperty.all(30)),
+              onPressed: () {
+                showSearch(context: context, delegate: dataSearch());
+              },
+              icon: Icon(
+                Icons.search,
+                color: Colors.white,
+              )),
+        ],
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [

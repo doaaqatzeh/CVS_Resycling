@@ -34,6 +34,8 @@ class _RegistrationPageState extends State<RegistrationPage>
   bool _isLoading = false;
   String _passwordStrength = '';
   String _userType = 'Commercial'; // نوع العميل
+  bool _emailExists = false;
+  bool _phoneExists = false;
 
   XFile? _image1;
   XFile? _image2;
@@ -45,8 +47,48 @@ class _RegistrationPageState extends State<RegistrationPage>
   void _register() async {
     setState(() {
       _isLoading = true;
+      _emailExists = false; // إعادة تعيين الحالة
+      _phoneExists = false; // إعادة تعيين الحالة
     });
     try {
+      // التحقق من وجود البريد الإلكتروني
+      QuerySnapshot emailQuery = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: _email)
+          .limit(1)
+          .get();
+      if (emailQuery.docs.isNotEmpty) {
+        setState(() {
+          _emailExists = true; // البريد الإلكتروني موجود
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Email already exists')),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return; // لا تتابع إذا كان البريد الإلكتروني موجودًا
+      }
+
+      // التحقق من وجود رقم الهاتف
+      QuerySnapshot phoneQuery = await _firestore
+          .collection('users')
+          .where('phoneNumber', isEqualTo: '$_countryCode$_phoneNumber')
+          .limit(1)
+          .get();
+      if (phoneQuery.docs.isNotEmpty) {
+        setState(() {
+          _phoneExists = true; // رقم الهاتف موجود
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Phone number already exists')),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return; // لا تتابع إذا كان رقم الهاتف موجودًا
+      }
+
       UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
         email: _email,
@@ -288,6 +330,7 @@ class _RegistrationPageState extends State<RegistrationPage>
                         if (formKey.currentState!.validate()) {
                           formKey.currentState!.save();
                           _register();
+                          Navigator.pushNamed(context, "/login");
                         }
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -299,7 +342,6 @@ class _RegistrationPageState extends State<RegistrationPage>
                             ),
                           )),
                         );
-                        Navigator.pushNamed(context, "/login");
                       },
                       child: Center(
                         child: Text(
@@ -474,31 +516,41 @@ class _RegistrationPageState extends State<RegistrationPage>
 
   Widget _buildEmailField() {
     return TextFormField(
-      decoration: InputDecoration(
-        prefixIcon: Icon(
-          Icons.email,
-          color: Color.fromARGB(255, 214, 212, 212),
+        decoration: InputDecoration(
+          prefixIcon: Icon(
+            Icons.email,
+            color: Color.fromARGB(255, 214, 212, 212),
+          ),
+          hintText: 'Email',
+          hintStyle: TextStyle(
+              fontSize: 13,
+              fontFamily: "os-semibold",
+              color: Color(0xff333333)),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+              borderSide: BorderSide(color: Color(0xffF7DC6F), width: 1.8)),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+              borderSide: BorderSide(color: Colors.deepPurple)),
+          errorStyle:
+              TextStyle(color: Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
         ),
-        hintText: 'Email',
-        hintStyle: TextStyle(
-            fontSize: 13, fontFamily: "os-semibold", color: Color(0xff333333)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10.0),
-            borderSide: BorderSide(color: Color(0xffF7DC6F), width: 1.8)),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10.0),
-            borderSide: BorderSide(color: Colors.deepPurple)),
-        errorStyle:
-            TextStyle(color: Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
-      ),
-      validator: (value) {
-        if (value!.isEmpty || !value.contains('@')) {
-          return 'Please enter a valid email';
-        }
-        return null;
-      },
-      onSaved: (value) => _email = value!,
-    );
+        validator: (value) {
+          if (value!.isEmpty || !value.contains('@')) {
+            return 'Please enter a valid email';
+          }
+          return null;
+        },
+        onSaved: (value) => (_email = value!,));
+    // ignore: dead_code
+    if (_emailExists) // عرض رسالة الخطأ إذا كان البريد الإلكتروني موجودًا
+      Padding(
+        padding: const EdgeInsets.only(top: 5.0),
+        child: Text(
+          'Email already exists',
+          style: TextStyle(color: Colors.red),
+        ),
+      );
   }
 
   Widget _buildPasswordField() {
@@ -662,5 +714,14 @@ class _RegistrationPageState extends State<RegistrationPage>
         ),
       ],
     );
+    // ignore: dead_code
+    if (_phoneExists) // عرض رسالة الخطأ إذا كان رقم الهاتف موجودًا
+      Padding(
+        padding: const EdgeInsets.only(top: 5.0),
+        child: Text(
+          'Phone number already exists',
+          style: TextStyle(color: Colors.red),
+        ),
+      );
   }
 }

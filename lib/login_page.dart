@@ -249,38 +249,35 @@ class _LoginPageState extends State<LoginPage> {
                       )
                     else
                       TextFormField(
-                        decoration: InputDecoration(
-                          prefixIcon: Icon(
-                            Icons.email,
-                            color: Color.fromARGB(255, 214, 212, 212),
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(
+                              Icons.email,
+                              color: Color.fromARGB(255, 214, 212, 212),
+                            ),
+                            hintText: 'Email',
+                            hintStyle: TextStyle(
+                                fontSize: 13,
+                                fontFamily: "os-semibold",
+                                color: Color(0xff333333)),
+                            focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                                borderSide: BorderSide(
+                                    color: Color(0xffF7DC6F), width: 1.8)),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                                borderSide:
+                                    BorderSide(color: Colors.deepPurple)),
+                            errorStyle: TextStyle(
+                                color: Colors
+                                    .red), // تعيين لون رسالة الخطأ إلى الأحمر
                           ),
-                          hintText: 'Email',
-                          hintStyle: TextStyle(
-                              fontSize: 13,
-                              fontFamily: "os-semibold",
-                              color: Color(0xff333333)),
-                          focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.0),
-                              borderSide: BorderSide(
-                                  color: Color(0xffF7DC6F), width: 1.8)),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.0),
-                              borderSide: BorderSide(color: Colors.deepPurple)),
-                          errorStyle: TextStyle(
-                              color: Colors
-                                  .red), // تعيين لون رسالة الخطأ إلى الأحمر
-                        ),
-                        validator: (value) {
-                          if (value!.isEmpty ||
-                              !value.contains('@') ||
-                              !value.endsWith(".com") ||
-                              !value.endsWith(".net")) {
-                            return 'Please enter a valid email';
-                          }
-                          return null;
-                        },
-                        onSaved: (value) => _email = value!,
-                      ),
+                          validator: (value) {
+                            if (value!.isEmpty || !value.contains('@')) {
+                              return 'Please enter a valid email';
+                            }
+                            return null;
+                          },
+                          onSaved: (value) => (_email = value!,)),
                     SizedBox(
                       height: 10,
                     ),
