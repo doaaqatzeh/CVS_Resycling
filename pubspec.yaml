@@ -37,6 +37,7 @@ dependencies:
   animated_toggle_switch: ^0.8.4
   google_nav_bar: ^5.0.7
   google_maps_flutter: ^2.10.0
+  google_maps_flutter_android: ^2.14.12
   firebase_auth: ^5.3.4
   firebase_core: ^3.9.0
   cloud_firestore: ^5.6.0
