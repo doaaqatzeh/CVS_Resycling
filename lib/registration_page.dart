@@ -1,12 +1,9 @@
 // ignore_for_file: sort_child_properties_last
 
 import 'dart:async';
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
@@ -34,8 +31,8 @@ class _RegistrationPageState extends State<RegistrationPage>
   bool _isLoading = false;
   String _passwordStrength = '';
   String _userType = 'Commercial'; // نوع العميل
-  bool _emailExists = false;
-  bool _phoneExists = false;
+  bool _emailExists = false; // للتحقق من وجود البريد الإلكتروني
+  bool _phoneExists = false; // للتحقق من وجود رقم الهاتف
 
   XFile? _image1;
   XFile? _image2;
@@ -50,45 +47,50 @@ class _RegistrationPageState extends State<RegistrationPage>
       _emailExists = false; // إعادة تعيين الحالة
       _phoneExists = false; // إعادة تعيين الحالة
     });
+
     try {
       // التحقق من وجود البريد الإلكتروني
-      QuerySnapshot emailQuery = await _firestore
+      final QuerySnapshot emailQuery = await _firestore
           .collection('users')
           .where('email', isEqualTo: _email)
           .limit(1)
           .get();
       if (emailQuery.docs.isNotEmpty) {
         setState(() {
-          _emailExists = true; // البريد الإلكتروني موجود
+          _emailExists = true; // تحديث الحالة ليظهر الخطأ تحت حقل البريد
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Email already exists')),
+          SnackBar(
+              content: Text('Email already exists'),
+              backgroundColor: Colors.red),
         );
         setState(() {
           _isLoading = false;
         });
-        return; // لا تتابع إذا كان البريد الإلكتروني موجودًا
+
+        return; // إيقاف العملية هنا
       }
 
       // التحقق من وجود رقم الهاتف
-      QuerySnapshot phoneQuery = await _firestore
+      final QuerySnapshot result = await _firestore
           .collection('users')
           .where('phoneNumber', isEqualTo: '$_countryCode$_phoneNumber')
-          .limit(1)
           .get();
-      if (phoneQuery.docs.isNotEmpty) {
+      if (result.docs.isNotEmpty) {
         setState(() {
           _phoneExists = true; // رقم الهاتف موجود
         });
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Phone number already exists')),
+          SnackBar(
+              content: Text('Phone number already exists'),
+              backgroundColor: Colors.red),
         );
         setState(() {
           _isLoading = false;
         });
         return; // لا تتابع إذا كان رقم الهاتف موجودًا
       }
-
       UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
         email: _email,
@@ -142,10 +144,13 @@ class _RegistrationPageState extends State<RegistrationPage>
           User? user = _auth.currentUser;
           if (user != null && !user.emailVerified) {
             String uid = user.uid;
+
             // حذف البيانات المرتبطة بالمستخدم في Firestore
             await _firestore.collection('users').doc(uid).delete();
+
             // حذف المستخدم من Firebase Authentication
             await user.delete();
+
             print(
                 'User and associated data have been deleted due to email not verified.');
           }
@@ -156,20 +161,57 @@ class _RegistrationPageState extends State<RegistrationPage>
 
       // الانتقال إلى صفحة تسجيل الدخول بعد إرسال رابط التفعيل
       Navigator.pushReplacementNamed(context, '/login');
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            backgroundColor: Color(0xffECF0F6),
+            content: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Text(
+                "Please check you email for verification",
+                style: TextStyle(
+                    fontFamily: "os-semibold",
+                    fontSize: 16,
+                    color: Color(0xff333333)),
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                style: ButtonStyle(
+                    backgroundColor:
+                        MaterialStateProperty.all(Color(0xff5D8FD1)),
+                    padding: MaterialStateProperty.all(EdgeInsets.all(5)),
+                    shape: MaterialStateProperty.all(RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(9),
+                        side: BorderSide(
+                          color: Color(0xffE8E8E8),
+                        ))),
+                    shadowColor: WidgetStateProperty.all(
+                        Color.fromARGB(255, 213, 211, 211))),
+                child: Text(
+                  'ok',
+                  style: TextStyle(
+                      fontFamily: "os-bold", fontSize: 14, color: Colors.white),
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+              ),
+            ],
+          );
+        },
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration failed: $e')),
+        SnackBar(
+            content: Text('Registration failed: $e'),
+            backgroundColor: Colors.red),
       );
     } finally {
       setState(() {
         _isLoading = false;
       });
-    }
-
-    @override
-    Widget build(BuildContext context) {
-      // TODO: implement build
-      throw UnimplementedError();
     }
   }
 
@@ -313,12 +355,28 @@ class _RegistrationPageState extends State<RegistrationPage>
               ),
               SizedBox(height: 10),
               _buildEmailField(),
+              if (_emailExists) // عرض رسالة الخطأ إذا كان البريد الإلكتروني موجودًا
+                Padding(
+                  padding: const EdgeInsets.only(top: 5.0),
+                  child: Text(
+                    'Email already exists',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
               SizedBox(height: 10),
               _buildPasswordField(),
               SizedBox(height: 10),
               _buildConfirmPasswordField(),
               SizedBox(height: 10),
               _buildPhoneNumberField(),
+              if (_phoneExists) // عرض رسالة الخطأ إذا كان رقم الهاتف موجودًا
+                Padding(
+                  padding: const EdgeInsets.only(top: 5.0),
+                  child: Text(
+                    'Phone number already exists',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
               SizedBox(height: 10),
               _buildImagePicker(1),
               if (userType == 'Commercial') _buildImagePicker(2),
@@ -330,18 +388,7 @@ class _RegistrationPageState extends State<RegistrationPage>
                         if (formKey.currentState!.validate()) {
                           formKey.currentState!.save();
                           _register();
-                          Navigator.pushNamed(context, "/login");
                         }
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text(
-                            'Please check your email for verification',
-                            style: TextStyle(
-                              fontFamily: "os-semibold",
-                              fontSize: 14,
-                            ),
-                          )),
-                        );
                       },
                       child: Center(
                         child: Text(
@@ -493,11 +540,9 @@ class _RegistrationPageState extends State<RegistrationPage>
           Icons.person,
           color: Color.fromARGB(255, 214, 212, 212),
         ),
-
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10.0),
             borderSide: BorderSide(color: Color(0xffCCCCCC))),
-
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10.0),
             borderSide: BorderSide(color: Color(0xffF7DC6F), width: 2)),
@@ -515,42 +560,37 @@ class _RegistrationPageState extends State<RegistrationPage>
   }
 
   Widget _buildEmailField() {
-    return TextFormField(
-        decoration: InputDecoration(
-          prefixIcon: Icon(
-            Icons.email,
-            color: Color.fromARGB(255, 214, 212, 212),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          decoration: InputDecoration(
+            prefixIcon: Icon(
+              Icons.email,
+              color: Color.fromARGB(255, 214, 212, 212),
+            ),
+            hintText: 'Email',
+            hintStyle: TextStyle(
+                fontSize: 13,
+                fontFamily: "os-semibold",
+                color: Color(0xff333333)),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+                borderSide: BorderSide(color: Color(0xffF7DC6F), width: 1.8)),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+                borderSide: BorderSide(color: Colors.deepPurple)),
           ),
-          hintText: 'Email',
-          hintStyle: TextStyle(
-              fontSize: 13,
-              fontFamily: "os-semibold",
-              color: Color(0xff333333)),
-          focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10.0),
-              borderSide: BorderSide(color: Color(0xffF7DC6F), width: 1.8)),
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10.0),
-              borderSide: BorderSide(color: Colors.deepPurple)),
-          errorStyle:
-              TextStyle(color: Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
+          validator: (value) {
+            if (value!.isEmpty || !value.contains('@')) {
+              return 'Please enter a valid email';
+            }
+            return null;
+          },
+          onSaved: (value) => (_email = value!),
         ),
-        validator: (value) {
-          if (value!.isEmpty || !value.contains('@')) {
-            return 'Please enter a valid email';
-          }
-          return null;
-        },
-        onSaved: (value) => (_email = value!,));
-    // ignore: dead_code
-    if (_emailExists) // عرض رسالة الخطأ إذا كان البريد الإلكتروني موجودًا
-      Padding(
-        padding: const EdgeInsets.only(top: 5.0),
-        child: Text(
-          'Email already exists',
-          style: TextStyle(color: Colors.red),
-        ),
-      );
+      ],
+    );
   }
 
   Widget _buildPasswordField() {
@@ -667,61 +707,50 @@ class _RegistrationPageState extends State<RegistrationPage>
   }
 
   Widget _buildPhoneNumberField() {
-    return Row(
-      children: [
-        CountryCodePicker(
-          onChanged: (code) {
-            setState(() {
-              _countryCode = code.dialCode!;
-            });
-          },
-          initialSelection: 'US',
-          showCountryOnly: false,
-          showOnlyCountryWhenClosed: false,
-          favorite: ['US', 'CA'],
-        ),
-        Expanded(
-          child: TextFormField(
-            decoration: InputDecoration(
-              hintStyle: TextStyle(
-                  fontSize: 13,
-                  fontFamily: "os-semibold",
-                  color: Color(0xff333333)),
-              prefixIcon: Icon(
-                Icons.phone,
-                color: Color.fromARGB(255, 214, 212, 212),
-              ),
-              focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                  borderSide: BorderSide(color: Color(0xffF7DC6F), width: 2)),
-
-              hintText: 'Phone Number',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              errorStyle: TextStyle(
-                  color: Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
+    return Row(children: [
+      CountryCodePicker(
+        onChanged: (code) {
+          setState(() {
+            _countryCode = code.dialCode!;
+          });
+        },
+        initialSelection: 'US',
+        showCountryOnly: false,
+        showOnlyCountryWhenClosed: false,
+        favorite: ['US', 'CA'],
+      ),
+      Expanded(
+        child: TextFormField(
+          keyboardType: TextInputType.phone,
+          decoration: InputDecoration(
+            hintStyle: TextStyle(
+                fontSize: 13,
+                fontFamily: "os-semibold",
+                color: Color(0xff333333)),
+            prefixIcon: Icon(
+              Icons.phone,
+              color: Color.fromARGB(255, 214, 212, 212),
             ),
-            keyboardType: TextInputType.phone,
-            validator: (value) {
-              if (value!.isEmpty || value.length < 9 || value.length > 10) {
-                return 'Please enter a valid phone number';
-              }
-              return null;
-            },
-            onSaved: (value) => _phoneNumber = value!,
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+                borderSide: BorderSide(color: Color(0xffF7DC6F), width: 2)),
+
+            hintText: 'Phone Number',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            errorStyle: TextStyle(
+                color: Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
           ),
+          validator: (value) {
+            if (value!.isEmpty) {
+              return 'Please enter your phone number';
+            }
+            return null;
+          },
+          onSaved: (value) => _phoneNumber = value!,
         ),
-      ],
-    );
-    // ignore: dead_code
-    if (_phoneExists) // عرض رسالة الخطأ إذا كان رقم الهاتف موجودًا
-      Padding(
-        padding: const EdgeInsets.only(top: 5.0),
-        child: Text(
-          'Phone number already exists',
-          style: TextStyle(color: Colors.red),
-        ),
-      );
+      )
+    ]);
   }
 }

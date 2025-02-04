@@ -386,7 +386,6 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.pushNamed(context, "/home");
                         if (_formKey.currentState!.validate()) {
                           _formKey.currentState!.save();
                           _login();
