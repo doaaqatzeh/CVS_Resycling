@@ -390,16 +390,6 @@ class _LoginPageState extends State<LoginPage> {
                           _formKey.currentState!.save();
                           _login();
                         }
-                        // ScaffoldMessenger.of(context).showSnackBar(
-                        //   SnackBar(
-                        //       content: Text(
-                        //     'Please check your email',
-                        //     style: TextStyle(
-                        //       fontFamily: "os-semibold",
-                        //       fontSize: 14,
-                        //     ),
-                        //   )),
-                        // );
                       },
                       child: Center(
                         child: Text(

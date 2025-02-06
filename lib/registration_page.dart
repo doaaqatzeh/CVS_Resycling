@@ -205,7 +205,7 @@ class _RegistrationPageState extends State<RegistrationPage>
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Registration failed: $e'),
+            content: Text('Email is alredy in use'),
             backgroundColor: Colors.red),
       );
     } finally {
