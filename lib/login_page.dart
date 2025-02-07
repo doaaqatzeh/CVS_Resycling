@@ -1,5 +1,6 @@
 // ignore_for_file: sort_child_properties_last
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -26,46 +27,86 @@ class _LoginPageState extends State<LoginPage> {
   String _email = '';
   String _passwordStrength = '';
   String _password = '';
+  String? _errorMessage;
+  bool _obscureText = true;
+  bool _isPhoneLogin = false;
+  final _auth = FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance;
+  String _emailOrPhone = '';
+  String _countryCode = '+1'; // Default country code
+
   void _login() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    _formKey.currentState!.save();
     setState(() {
       _isLoading = true;
+      _errorMessage = null;
     });
 
     try {
-      // محاولة تسجيل الدخول
-      UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _email,
-        password: _password,
-      );
+      UserCredential userCredential;
+      if (_isPhoneLogin) {
+        // البحث عن المستخدم باستخدام رقم الهاتف
+        final QuerySnapshot result = await _firestore
+            .collection('users')
+            .where('phoneNumber', isEqualTo: '$_countryCode$_emailOrPhone')
+            .get();
+        final List<DocumentSnapshot> documents = result.docs;
 
-      // التحقق مما إذا كان البريد الإلكتروني قد تم التحقق منه
-      if (!userCredential.user!.emailVerified) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Please verify your email')),
+        if (documents.isEmpty) {
+          setState(() {
+            _errorMessage = 'No user found with this phone number.';
+            _isLoading = false;
+          });
+          return;
+        }
+
+        final userDoc = documents.first;
+        final email = userDoc['email'];
+
+        // تسجيل الدخول باستخدام البريد الإلكتروني المرتبط برقم الهاتف
+        userCredential = await _auth.signInWithEmailAndPassword(
+          email: email,
+          password: _password,
         );
+      } else {
+        // تسجيل الدخول باستخدام البريد الإلكتروني
+        userCredential = await _auth.signInWithEmailAndPassword(
+          email: _emailOrPhone,
+          password: _password,
+        );
+      }
+
+      if (!userCredential.user!.emailVerified) {
+        setState(() {
+          _errorMessage = 'Your email is not verified. Please verify it.';
+        });
+        await _auth.signOut();
         setState(() {
           _isLoading = false;
         });
         return;
       }
 
-      // الانتقال إلى الصفحة الرئيسية إذا كان التحقق ناجحًا
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacementNamed(context, '/thankyou', arguments: FirebaseAuth.instance.currentUser?.displayName);
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'user-not-found') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Email does not exist')),
-        );
-      } else if (e.code == 'wrong-password') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Incorrect password')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login failed: $e')),
-        );
-      }
+      setState(() {
+        switch (e.code) {
+          case 'user-not-found':
+            _errorMessage = 'No user found with this email or phone number.';
+            break;
+          case 'wrong-password':
+            _errorMessage = 'Incorrect password. Please try again.';
+            break;
+          default:
+            _errorMessage = 'Login failed: ${e.message}';
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'An unexpected error occurred: $e';
+      });
     } finally {
       setState(() {
         _isLoading = false;
