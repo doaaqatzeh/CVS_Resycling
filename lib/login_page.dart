@@ -1,8 +1,12 @@
 // ignore_for_file: sort_child_properties_last
 
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cvsr/main_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -26,50 +30,62 @@ class _LoginPageState extends State<LoginPage> {
   String _email = '';
   String _passwordStrength = '';
   String _password = '';
-  void _login() async {
-    setState(() {
-      _isLoading = true;
-    });
+  String? _errorMessage;
+  bool _obscureText = true;
+  bool _isPhoneLogin = false;
+  final _auth = FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance;
+  String _emailOrPhone = '';
+  String _countryCode = '+1'; // Default country code
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  Future<void> _login() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      // تأكد من أن المستخدم قد أدخل بيانات في كل الحقول
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Please enter youe email and password'),
+      ));
+      return;
+    }
 
     try {
-      // محاولة تسجيل الدخول
+      // محاولة تسجيل الدخول باستخدام Firebase Authentication
       UserCredential userCredential =
           await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _email,
-        password: _password,
+        email: email,
+        password: password,
       );
-
-      // التحقق مما إذا كان البريد الإلكتروني قد تم التحقق منه
-      if (!userCredential.user!.emailVerified) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Please verify your email')),
-        );
-        setState(() {
-          _isLoading = false;
-        });
+      // الحصول على المستخدم الحالي
+      User? user = FirebaseAuth.instance.currentUser;
+      // التحقق مما إذا كان البريد الإلكتروني مفعلًا
+      if (user != null && !user.emailVerified) {
+        await FirebaseAuth.instance.signOut(); // تسجيل خروج المستخدم
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Please verify your email before login'),
+        ));
         return;
       }
+      // الانتقال إلى الصفحة الرئيسية إذا كان كل شيء صحيحًا
 
-      // الانتقال إلى الصفحة الرئيسية إذا كان التحقق ناجحًا
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+            builder: (context) => MainPage()), // توجه إلى صفحة Home
+      );
     } on FirebaseAuthException catch (e) {
+      String errorMessage = 'حدث خطأ أثناء تسجيل الدخول';
       if (e.code == 'user-not-found') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Email does not exist')),
-        );
+        errorMessage = 'المستخدم غير موجود';
       } else if (e.code == 'wrong-password') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Incorrect password')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login failed: $e')),
-        );
+        errorMessage = 'كلمة المرور خاطئة';
       }
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(errorMessage),
+      ));
     }
   }
 
@@ -248,40 +264,41 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       )
                     else
-                      TextFormField(
-                          decoration: InputDecoration(
-                            prefixIcon: Icon(
-                              Icons.email,
-                              color: Color.fromARGB(255, 214, 212, 212),
-                            ),
-                            hintText: 'Email',
-                            hintStyle: TextStyle(
-                                fontSize: 13,
-                                fontFamily: "os-semibold",
-                                color: Color(0xff333333)),
-                            focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                                borderSide: BorderSide(
-                                    color: Color(0xffF7DC6F), width: 1.8)),
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                                borderSide:
-                                    BorderSide(color: Colors.deepPurple)),
-                            errorStyle: TextStyle(
-                                color: Colors
-                                    .red), // تعيين لون رسالة الخطأ إلى الأحمر
-                          ),
-                          validator: (value) {
-                            if (value!.isEmpty || !value.contains('@')) {
-                              return 'Please enter a valid email';
-                            }
-                            return null;
-                          },
-                          onSaved: (value) => (_email = value!,)),
-                    SizedBox(
-                      height: 10,
-                    ),
+                      SizedBox(height: 10),
                     TextFormField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        prefixIcon: Icon(
+                          Icons.email,
+                          color: Color.fromARGB(255, 214, 212, 212),
+                        ),
+                        hintText: 'Email',
+                        hintStyle: TextStyle(
+                            fontSize: 13,
+                            fontFamily: "os-semibold",
+                            color: Color(0xff333333)),
+                        focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                            borderSide: BorderSide(
+                                color: Color(0xffF7DC6F), width: 1.8)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                            borderSide: BorderSide(color: Colors.deepPurple)),
+                        errorStyle: TextStyle(
+                            color:
+                                Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value!.isEmpty || !value.contains('@')) {
+                          return 'Please enter a valid email';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 10),
+                    TextFormField(
+                      controller: _passwordController,
                       decoration: InputDecoration(
                         hintText: 'Password',
                         hintStyle: TextStyle(
@@ -320,32 +337,22 @@ class _LoginPageState extends State<LoginPage> {
                       validator: (value) {
                         if (value!.isEmpty) {
                           return 'Password is required';
-                        } else if (value.length < 8) {
-                          return 'Password must be at least 8 characters';
-                        } else if (!RegExp(
-                                r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$')
-                            .hasMatch(value)) {
-                          return 'Password must include letters, numbers, and special characters';
                         }
                         return null;
                       },
                       onChanged: (value) {
                         setState(() {
-                          _password = value; // حفظ كلمة المرور في المتغير
-                          if (value.isNotEmpty) {
-                            _checkPasswordStrength(value);
-                          } else {
-                            _passwordStrength = '';
-                          }
+                          _checkPasswordStrength(value);
                         });
                       },
-                      onSaved: (value) => _password = value!,
                     ),
-                    if (_password.isNotEmpty) SizedBox(height: 5),
-                    if (_password.isNotEmpty)
-                      Text(
-                        'Password Strength: $_passwordStrength',
-                        style: TextStyle(color: _getPasswordStrengthColor()),
+                    if (_passwordStrength.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 5),
+                        child: Text(
+                          'Password Strength: $_passwordStrength',
+                          style: TextStyle(color: _getPasswordStrengthColor()),
+                        ),
                       ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -384,20 +391,17 @@ class _LoginPageState extends State<LoginPage> {
                         )
                       ],
                     ),
+                    SizedBox(height: 6),
                     ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          _formKey.currentState!.save();
-                          _login();
-                        }
-                      },
+                      onPressed: _login,
                       child: Center(
                         child: Text(
                           'Log in',
                           style: TextStyle(
-                              fontSize: 16,
-                              fontFamily: "os-semibold",
-                              color: Color(0xffFFFFFF)),
+                            fontSize: 16,
+                            fontFamily: "os-semibold",
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                       style: ButtonStyle(

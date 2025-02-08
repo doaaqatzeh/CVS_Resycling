@@ -1,12 +1,14 @@
 // ignore_for_file: sort_child_properties_last
 
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
+import 'package:http/http.dart' as http;
 
 class RegistrationPage extends StatefulWidget {
   @override
@@ -44,53 +46,54 @@ class _RegistrationPageState extends State<RegistrationPage>
   void _register() async {
     setState(() {
       _isLoading = true;
-      _emailExists = false; // إعادة تعيين الحالة
-      _phoneExists = false; // إعادة تعيين الحالة
+      _emailExists = false;
+      _phoneExists = false;
     });
 
     try {
-      // التحقق من وجود البريد الإلكتروني
-      final QuerySnapshot emailQuery = await _firestore
-          .collection('users')
-          .where('email', isEqualTo: _email)
-          .limit(1)
-          .get();
-      if (emailQuery.docs.isNotEmpty) {
-        setState(() {
-          _emailExists = true; // تحديث الحالة ليظهر الخطأ تحت حقل البريد
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Email already exists'),
-              backgroundColor: Colors.red),
-        );
-        setState(() {
-          _isLoading = false;
-        });
-
-        return; // إيقاف العملية هنا
+      // استدعاء API للتحقق من وجود البريد الإلكتروني
+      final emailResponse = await http.get(Uri.parse(
+          'https://api-u2trpn6p6a-uc.a.run.app/users/check-email?email=$_email'));
+      if (emailResponse.statusCode == 200) {
+        var emailData = json.decode(emailResponse.body);
+        if (emailData['exists']) {
+          setState(() {
+            _emailExists = true;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('Email already exists'),
+                backgroundColor: Colors.red),
+          );
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
       }
 
-      // التحقق من وجود رقم الهاتف
-      final QuerySnapshot result = await _firestore
-          .collection('users')
-          .where('phoneNumber', isEqualTo: '$_countryCode$_phoneNumber')
-          .get();
-      if (result.docs.isNotEmpty) {
-        setState(() {
-          _phoneExists = true; // رقم الهاتف موجود
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Phone number already exists'),
-              backgroundColor: Colors.red),
-        );
-        setState(() {
-          _isLoading = false;
-        });
-        return; // لا تتابع إذا كان رقم الهاتف موجودًا
+      // استدعاء API للتحقق من وجود رقم الهاتف
+      final phoneResponse = await http.get(Uri.parse(
+          'https://api-u2trpn6p6a-uc.a.run.app/users/check-phone?phone=$_countryCode$_phoneNumber'));
+      if (phoneResponse.statusCode == 200) {
+        var phoneData = json.decode(phoneResponse.body);
+        if (phoneData['exists']) {
+          setState(() {
+            _phoneExists = true;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('Phone number already exists'),
+                backgroundColor: Colors.red),
+          );
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
       }
+
+      // استكمال عملية التسجيل كما هو
       UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
         email: _email,
@@ -129,16 +132,16 @@ class _RegistrationPageState extends State<RegistrationPage>
         'lastName': _lastName,
         'email': _email,
         'phoneNumber': '$_countryCode$_phoneNumber',
-        'password': encryptedPassword.base64, // حفظ كلمة المرور المشفرة
+        'password': encryptedPassword.base64,
         'image1': _imageUrl1,
         'image2': _imageUrl2,
-        'userType': _userType, // تخزين نوع العميل
+        'userType': _userType,
       });
 
       await userCredential.user!.updateDisplayName(_firstName);
       await userCredential.user!.sendEmailVerification();
 
-      // جدولة حذف الحساب إذا لم يتم التفعيل خلال دقيقتين
+      // جدولة حذف الحساب إذا لم يتم التفعيل خلال خمس دقائق
       Timer(Duration(minutes: 2), () async {
         try {
           User? user = _auth.currentUser;
@@ -174,6 +177,7 @@ class _RegistrationPageState extends State<RegistrationPage>
                     fontFamily: "os-semibold",
                     fontSize: 16,
                     color: Color(0xff333333)),
+                textAlign: TextAlign.center,
               ),
             ),
             actions: <Widget>[
@@ -187,7 +191,7 @@ class _RegistrationPageState extends State<RegistrationPage>
                         side: BorderSide(
                           color: Color(0xffE8E8E8),
                         ))),
-                    shadowColor: WidgetStateProperty.all(
+                    shadowColor: MaterialStateProperty.all(
                         Color.fromARGB(255, 213, 211, 211))),
                 child: Text(
                   'ok',
@@ -205,7 +209,7 @@ class _RegistrationPageState extends State<RegistrationPage>
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Email is alredy in use'),
+            content: Text('An error occurred: $e'),
             backgroundColor: Colors.red),
       );
     } finally {
@@ -387,7 +391,7 @@ class _RegistrationPageState extends State<RegistrationPage>
                       onPressed: () {
                         if (formKey.currentState!.validate()) {
                           formKey.currentState!.save();
-                          _register();
+                          _register(); // تحقق من البريد ورقم الهاتف قبل التسجيل
                         }
                       },
                       child: Center(
@@ -564,6 +568,7 @@ class _RegistrationPageState extends State<RegistrationPage>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TextFormField(
+          keyboardType: TextInputType.emailAddress,
           decoration: InputDecoration(
             prefixIcon: Icon(
               Icons.email,

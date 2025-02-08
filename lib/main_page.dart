@@ -54,6 +54,21 @@ class _MainPageState extends State<MainPage> {
       return Future.error(
           'Location permissions are permanently denied, we cannot request permissions.');
     }
+    if (permission == LocationPermission.always ||
+        permission == LocationPermission.whileInUse) {
+      // Get the current location
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+      setState(() {
+        _currentLocation = LatLng(position.latitude, position.longitude);
+        disenable = false;
+      });
+      // Move camera to the current location
+    } else {
+      // Handle permission denied case
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Location permission denied')));
+    }
 
     // When we reach here, permissions are granted and we can
     // continue accessing the position of the device.
@@ -150,6 +165,7 @@ class _MainPageState extends State<MainPage> {
   final List<Marker> _markers = [];
   final List<Polyline> _polyLine = [];
   TextEditingController _textfildcontroller = TextEditingController();
+
 //   New York City, NY
 
 // Latitude: 40.7128
@@ -166,7 +182,6 @@ class _MainPageState extends State<MainPage> {
   @override
   void dispose() {
     _textfildcontroller.dispose();
-    super.dispose();
   }
 
   @override
@@ -545,13 +560,17 @@ class _MainPageState extends State<MainPage> {
               right: 70,
               child: TypeAheadField(
                   showOnFocus: true,
-                  builder: (context, controller, focusNode) {
+                  builder: (context, _textfildcontroller, focusNode) {
                     return Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Container(
                         height: 50,
                         child: TextField(
-                          controller: controller,
+                          style: TextStyle(
+                              fontFamily: "os-semibold",
+                              fontSize: 15,
+                              color: Color(0xff333333)),
+                          controller: _textfildcontroller,
                           focusNode: focusNode,
                           autofocus: false,
                           decoration: const InputDecoration(
@@ -559,7 +578,7 @@ class _MainPageState extends State<MainPage> {
                             fillColor: Colors.white,
                             hintText: 'Search Locations...',
                             prefixIcon: Icon(Icons.search,
-                                color: Color.fromARGB(255, 177, 174, 174)),
+                                color: Color.fromARGB(255, 97, 66, 66)),
                             hintStyle: TextStyle(
                                 fontFamily: "os-reg",
                                 fontSize: 14,
@@ -592,12 +611,19 @@ class _MainPageState extends State<MainPage> {
                     );
                   },
                   onSelected: (value) {
+                    TextStyle(
+                        fontFamily: "os-semibold",
+                        fontSize: 15,
+                        color: Color.fromARGB(255, 177, 174, 174));
                     setState(() {
                       String select = _textfildcontroller.text = value;
+
                       LatLng? l = SearchService.location[select];
                       mapController.animateCamera(CameraUpdate.newLatLng(l!));
                     });
+                    FocusScope.of(context).unfocus();
                   },
+                  controller: _textfildcontroller,
                   suggestionsCallback: (String search) {
                     return SearchService.getSuggestions(search);
                   }),
@@ -738,24 +764,24 @@ class _MainPageState extends State<MainPage> {
 
   Future<void> _getCurrentLocation() async {
     // Request permission
-    LocationPermission permission = await Geolocator.requestPermission();
+    // LocationPermission permission = await Geolocator.requestPermission();
 
-    if (permission == LocationPermission.always ||
-        permission == LocationPermission.whileInUse) {
-      // Get the current location
-      Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-      setState(() {
-        _currentLocation = LatLng(position.latitude, position.longitude);
-        disenable = false;
-      });
-      // Move camera to the current location
-      mapController.animateCamera(CameraUpdate.newLatLng(_currentLocation!));
-    } else {
-      // Handle permission denied case
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Location permission denied')));
-    }
+    // if (permission == LocationPermission.always ||
+    //     permission == LocationPermission.whileInUse) {
+    //   // Get the current location
+    //   Position position = await Geolocator.getCurrentPosition(
+    //       desiredAccuracy: LocationAccuracy.high);
+    //   setState(() {
+    //     _currentLocation = LatLng(position.latitude, position.longitude);
+    //     disenable = false;
+    //   });
+    // Move camera to the current location
+    mapController.animateCamera(CameraUpdate.newLatLng(_currentLocation!));
+    // } else {
+    //   // Handle permission denied case
+    //   ScaffoldMessenger.of(context)
+    //       .showSnackBar(SnackBar(content: Text('Location permission denied')));
+    // }
   }
 
   void _goToTargetLocation(int p) {
