@@ -44,7 +44,6 @@ class _LoginPageState extends State<LoginPage> {
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      // تأكد من أن المستخدم قد أدخل بيانات في كل الحقول
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('يرجى إدخال الإيميل وكلمة المرور'),
       ));
@@ -52,19 +51,31 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     try {
-      // محاولة تسجيل الدخول باستخدام Firebase Authentication
+      // تسجيل الدخول باستخدام Firebase Authentication
       UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // إذا كانت البيانات صحيحة، انتقل إلى الصفحة الرئيسية
+      // الحصول على المستخدم الحالي
+      User? user = FirebaseAuth.instance.currentUser;
+
+      // التحقق مما إذا كان البريد الإلكتروني مفعلًا
+      if (user != null && !user.emailVerified) {
+        await FirebaseAuth.instance.signOut(); // تسجيل خروج المستخدم
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('يرجى تفعيل بريدك الإلكتروني قبل تسجيل الدخول'),
+        ));
+        return;
+      }
+
+      // الانتقال إلى الصفحة الرئيسية إذا كان كل شيء صحيحًا
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => MainPage()),  // توجه إلى صفحة Home
+        MaterialPageRoute(builder: (context) => MainPage()),
       );
+
     } on FirebaseAuthException catch (e) {
-      // التعامل مع الأخطاء
       String errorMessage = 'حدث خطأ أثناء تسجيل الدخول';
       if (e.code == 'user-not-found') {
         errorMessage = 'المستخدم غير موجود';
