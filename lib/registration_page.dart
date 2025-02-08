@@ -171,6 +171,7 @@ class _RegistrationPageState extends State<RegistrationPage>
               padding: const EdgeInsets.all(20.0),
               child: Text(
                 "Please check you email for verification",
+                textAlign: TextAlign.center,
                 style: TextStyle(
                     fontFamily: "os-semibold",
                     fontSize: 16,
