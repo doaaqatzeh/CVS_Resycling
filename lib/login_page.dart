@@ -1,9 +1,12 @@
 // ignore_for_file: sort_child_properties_last
 
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cvsr/main_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -34,85 +37,47 @@ class _LoginPageState extends State<LoginPage> {
   final _firestore = FirebaseFirestore.instance;
   String _emailOrPhone = '';
   String _countryCode = '+1'; // Default country code
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  Future<void> _login() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
 
-  void _login() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    _formKey.currentState!.save();
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    if (email.isEmpty || password.isEmpty) {
+      // تأكد من أن المستخدم قد أدخل بيانات في كل الحقول
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('يرجى إدخال الإيميل وكلمة المرور'),
+      ));
+      return;
+    }
 
     try {
-      UserCredential userCredential;
-      if (_isPhoneLogin) {
-        // البحث عن المستخدم باستخدام رقم الهاتف
-        final QuerySnapshot result = await _firestore
-            .collection('users')
-            .where('phoneNumber', isEqualTo: '$_countryCode$_emailOrPhone')
-            .get();
-        final List<DocumentSnapshot> documents = result.docs;
+      // محاولة تسجيل الدخول باستخدام Firebase Authentication
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-        if (documents.isEmpty) {
-          setState(() {
-            _errorMessage = 'No user found with this phone number.';
-            _isLoading = false;
-          });
-          return;
-        }
-
-        final userDoc = documents.first;
-        final email = userDoc['email'];
-
-        // تسجيل الدخول باستخدام البريد الإلكتروني المرتبط برقم الهاتف
-        userCredential = await _auth.signInWithEmailAndPassword(
-          email: email,
-          password: _password,
-        );
-      } else {
-        // تسجيل الدخول باستخدام البريد الإلكتروني
-        userCredential = await _auth.signInWithEmailAndPassword(
-          email: _emailOrPhone,
-          password: _password,
-        );
-      }
-
-      if (!userCredential.user!.emailVerified) {
-        setState(() {
-          _errorMessage = 'Your email is not verified. Please verify it.';
-        });
-        await _auth.signOut();
-        setState(() {
-          _isLoading = false;
-        });
-        return;
-      }
-
-      Navigator.pushReplacementNamed(context, '/thankyou', arguments: FirebaseAuth.instance.currentUser?.displayName);
+      // إذا كانت البيانات صحيحة، انتقل إلى الصفحة الرئيسية
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MainPage()),  // توجه إلى صفحة Home
+      );
     } on FirebaseAuthException catch (e) {
-      setState(() {
-        switch (e.code) {
-          case 'user-not-found':
-            _errorMessage = 'No user found with this email or phone number.';
-            break;
-          case 'wrong-password':
-            _errorMessage = 'Incorrect password. Please try again.';
-            break;
-          default:
-            _errorMessage = 'Login failed: ${e.message}';
-        }
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'An unexpected error occurred: $e';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      // التعامل مع الأخطاء
+      String errorMessage = 'حدث خطأ أثناء تسجيل الدخول';
+      if (e.code == 'user-not-found') {
+        errorMessage = 'المستخدم غير موجود';
+      } else if (e.code == 'wrong-password') {
+        errorMessage = 'كلمة المرور خاطئة';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(errorMessage),
+      ));
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -289,58 +254,39 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       )
                     else
-                      TextFormField(
-                          decoration: InputDecoration(
-                            prefixIcon: Icon(
-                              Icons.email,
-                              color: Color.fromARGB(255, 214, 212, 212),
-                            ),
-                            hintText: 'Email',
-                            hintStyle: TextStyle(
-                                fontSize: 13,
-                                fontFamily: "os-semibold",
-                                color: Color(0xff333333)),
-                            focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                                borderSide: BorderSide(
-                                    color: Color(0xffF7DC6F), width: 1.8)),
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                                borderSide:
-                                    BorderSide(color: Colors.deepPurple)),
-                            errorStyle: TextStyle(
-                                color: Colors
-                                    .red), // تعيين لون رسالة الخطأ إلى الأحمر
-                          ),
-                          validator: (value) {
-                            if (value!.isEmpty || !value.contains('@')) {
-                              return 'Please enter a valid email';
-                            }
-                            return null;
-                          },
-                          onSaved: (value) => (_email = value!,)),
-                    SizedBox(
-                      height: 10,
-                    ),
+                      SizedBox(height: 10),
                     TextFormField(
+                      controller: _emailController,
                       decoration: InputDecoration(
-                        hintText: 'Password',
-                        hintStyle: TextStyle(
-                            fontSize: 13,
-                            fontFamily: "os-semibold",
-                            color: Color(0xff333333)),
-                        prefixIcon: Icon(
-                          Icons.password_sharp,
-                          color: Color.fromARGB(255, 214, 212, 212),
-                        ),
-                        border: OutlineInputBorder(
+                        prefixIcon: Icon(Icons.email, color: Color(0xFFD6D4D4)),
+                        hintText: 'Email',
+                        focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10.0),
+                          borderSide: BorderSide(color: Color(0xffF7DC6F), width: 1.8),
+                        ),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value!.isEmpty || !value.contains('@')) {
+                          return 'Please enter a valid email';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    SizedBox(height: 10),
+                    TextFormField(
+                      controller: _passwordController,
+                      decoration: InputDecoration(
+                        prefixIcon: Icon(Icons.lock, color: Color(0xFFD6D4D4)),
+                        hintText: 'Password',
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                          borderSide: BorderSide(color: Color(0xffF7DC6F), width: 2),
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _isPasswordVisible
-                                ? Icons.visibility
-                                : Icons.visibility_off,
+                            _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
                             color: Color(0xFFD6D4D4),
                           ),
                           onPressed: () {
@@ -349,58 +295,28 @@ class _LoginPageState extends State<LoginPage> {
                             });
                           },
                         ),
-                        focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                            borderSide:
-                                BorderSide(color: Color(0xffF7DC6F), width: 2)),
-                        errorStyle: TextStyle(
-                            color:
-                                Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
                       ),
                       obscureText: !_isPasswordVisible,
                       validator: (value) {
                         if (value!.isEmpty) {
                           return 'Password is required';
-                        } else if (value.length < 8) {
-                          return 'Password must be at least 8 characters';
-                        } else if (!RegExp(
-                                r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$')
-                            .hasMatch(value)) {
-                          return 'Password must include letters, numbers, and special characters';
                         }
                         return null;
                       },
                       onChanged: (value) {
                         setState(() {
-                          _password = value; // حفظ كلمة المرور في المتغير
-                          if (value.isNotEmpty) {
-                            _checkPasswordStrength(value);
-                          } else {
-                            _passwordStrength = '';
-                          }
+                          _checkPasswordStrength(value);
                         });
                       },
-                      onSaved: (value) => _password = value!,
                     ),
-                    if (_password.isNotEmpty) SizedBox(height: 5),
-                    if (_password.isNotEmpty)
-                      Text(
-                        'Password Strength: $_passwordStrength',
-                        style: TextStyle(color: _getPasswordStrengthColor()),
+                    if (_passwordStrength.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 5),
+                        child: Text(
+                          'Password Strength: $_passwordStrength',
+                          style: TextStyle(color: _getPasswordStrengthColor()),
+                        ),
                       ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Row(
-                          children: [
-                            Checkbox(
-                                activeColor: Color(accentcolor),
-                                value: isChecked,
-                                onChanged: (newbool) {
-                                  setState(() {
-                                    isChecked = newbool;
-                                  });
-                                }),
                             Text(
                               "Remember Me",
                               style: TextStyle(
@@ -410,9 +326,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ],
                         ),
-                        SizedBox(
-                          width: 30,
-                        ),
+              ),
                         InkWell(
                           child: Text(
                             "forget Password?",
@@ -422,36 +336,28 @@ class _LoginPageState extends State<LoginPage> {
                                 color: Color(accentcolor)),
                           ),
                           onTap: () {},
-                        )
-                      ],
-                    ),
+                        ),
+
+                    SizedBox(height: 6),
                     ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          _formKey.currentState!.save();
-                          _login();
-                        }
-                      },
+                      onPressed: _login,
                       child: Center(
                         child: Text(
                           'Log in',
                           style: TextStyle(
-                              fontSize: 16,
-                              fontFamily: "os-semibold",
-                              color: Color(0xffFFFFFF)),
+                            fontSize: 16,
+                            fontFamily: "os-semibold",
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                       style: ButtonStyle(
-                        backgroundColor:
-                            MaterialStateProperty.all(Color(pcolor)),
+                        backgroundColor: MaterialStateProperty.all(Color(0xFF6A1B9A)),
                         padding: MaterialStateProperty.all(EdgeInsets.all(14)),
                         shape: MaterialStateProperty.all(RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         )),
                       ),
-                    ),
-                    SizedBox(
-                      height: 6,
                     ),
                     ElevatedButton(
                       onPressed: () {
@@ -479,13 +385,9 @@ class _LoginPageState extends State<LoginPage> {
                     SizedBox(
                       height: 3,
                     ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+
+                ],
+    ),
+              ),),);
   }
 }
