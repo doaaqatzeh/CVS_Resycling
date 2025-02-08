@@ -8,7 +8,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
-import 'package:http/http.dart' as http;
 
 class RegistrationPage extends StatefulWidget {
   @override
@@ -51,49 +50,48 @@ class _RegistrationPageState extends State<RegistrationPage>
     });
 
     try {
-      // استدعاء API للتحقق من وجود البريد الإلكتروني
-      final emailResponse = await http.get(Uri.parse(
-          'https://api-u2trpn6p6a-uc.a.run.app/users/check-email?email=$_email'));
-      if (emailResponse.statusCode == 200) {
-        var emailData = json.decode(emailResponse.body);
-        if (emailData['exists']) {
-          setState(() {
-            _emailExists = true;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text('Email already exists'),
-                backgroundColor: Colors.red),
-          );
-          setState(() {
-            _isLoading = false;
-          });
-          return;
-        }
+      // التحقق من وجود البريد الإلكتروني
+      final QuerySnapshot emailQuery = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: _email)
+          .limit(1)
+          .get();
+      if (emailQuery.docs.isNotEmpty) {
+        setState(() {
+          _emailExists = true; // تحديث الحالة ليظهر الخطأ تحت حقل البريد
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Email already exists'),
+              backgroundColor: Colors.red),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+
+        return; // إيقاف العملية هنا
       }
 
-      // استدعاء API للتحقق من وجود رقم الهاتف
-      final phoneResponse = await http.get(Uri.parse(
-          'https://api-u2trpn6p6a-uc.a.run.app/users/check-phone?phone=$_countryCode$_phoneNumber'));
-      if (phoneResponse.statusCode == 200) {
-        var phoneData = json.decode(phoneResponse.body);
-        if (phoneData['exists']) {
-          setState(() {
-            _phoneExists = true;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text('Phone number already exists'),
-                backgroundColor: Colors.red),
-          );
-          setState(() {
-            _isLoading = false;
-          });
-          return;
-        }
-      }
+      // التحقق من وجود رقم الهاتف
+      final QuerySnapshot result = await _firestore
+          .collection('users')
+          .where('phoneNumber', isEqualTo: '$_countryCode$_phoneNumber')
+          .get();
+      if (result.docs.isNotEmpty) {
+        setState(() {
+          _phoneExists = true; // رقم الهاتف موجود
+        });
 
-      // استكمال عملية التسجيل كما هو
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Phone number already exists'),
+              backgroundColor: Colors.red),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return; // لا تتابع إذا كان رقم الهاتف موجودًا
+      }
       UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
         email: _email,
@@ -177,7 +175,6 @@ class _RegistrationPageState extends State<RegistrationPage>
                     fontFamily: "os-semibold",
                     fontSize: 16,
                     color: Color(0xff333333)),
-                textAlign: TextAlign.center,
               ),
             ),
             actions: <Widget>[
@@ -209,7 +206,7 @@ class _RegistrationPageState extends State<RegistrationPage>
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('An error occurred: $e'),
+            content: Text('Email is alredy in use'),
             backgroundColor: Colors.red),
       );
     } finally {
@@ -391,7 +388,7 @@ class _RegistrationPageState extends State<RegistrationPage>
                       onPressed: () {
                         if (formKey.currentState!.validate()) {
                           formKey.currentState!.save();
-                          _register(); // تحقق من البريد ورقم الهاتف قبل التسجيل
+                          _register();
                         }
                       },
                       child: Center(
