@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -125,6 +126,7 @@ class _RegistrationPageState extends State<RegistrationPage>
       }
 
       // تسجيل البيانات في Firestore
+
       await _firestore.collection('users').doc(userCredential.user!.uid).set({
         'firstName': _firstName,
         'lastName': _lastName,
@@ -135,6 +137,7 @@ class _RegistrationPageState extends State<RegistrationPage>
         'image2': _imageUrl2,
         'userType': _userType,
       });
+      print("تم حفظ البيانات");
 
       await userCredential.user!.updateDisplayName(_firstName);
       await userCredential.user!.sendEmailVerification();

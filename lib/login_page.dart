@@ -264,38 +264,37 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       )
                     else
-                      SizedBox(height: 10),
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(
-                          Icons.email,
-                          color: Color.fromARGB(255, 214, 212, 212),
+                      TextFormField(
+                        controller: _emailController,
+                        decoration: InputDecoration(
+                          prefixIcon: Icon(
+                            Icons.email,
+                            color: Color.fromARGB(255, 214, 212, 212),
+                          ),
+                          hintText: 'Email',
+                          hintStyle: TextStyle(
+                              fontSize: 13,
+                              fontFamily: "os-semibold",
+                              color: Color(0xff333333)),
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                              borderSide: BorderSide(
+                                  color: Color(0xffF7DC6F), width: 1.8)),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                              borderSide: BorderSide(color: Colors.deepPurple)),
+                          errorStyle: TextStyle(
+                              color: Colors
+                                  .red), // تعيين لون رسالة الخطأ إلى الأحمر
                         ),
-                        hintText: 'Email',
-                        hintStyle: TextStyle(
-                            fontSize: 13,
-                            fontFamily: "os-semibold",
-                            color: Color(0xff333333)),
-                        focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                            borderSide: BorderSide(
-                                color: Color(0xffF7DC6F), width: 1.8)),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                            borderSide: BorderSide(color: Colors.deepPurple)),
-                        errorStyle: TextStyle(
-                            color:
-                                Colors.red), // تعيين لون رسالة الخطأ إلى الأحمر
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value!.isEmpty || !value.contains('@')) {
+                            return 'Please enter a valid email';
+                          }
+                          return null;
+                        },
                       ),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (value) {
-                        if (value!.isEmpty || !value.contains('@')) {
-                          return 'Please enter a valid email';
-                        }
-                        return null;
-                      },
-                    ),
                     SizedBox(height: 10),
                     TextFormField(
                       controller: _passwordController,
@@ -407,7 +406,7 @@ class _LoginPageState extends State<LoginPage> {
                       style: ButtonStyle(
                         backgroundColor:
                             MaterialStateProperty.all(Color(pcolor)),
-                        padding: MaterialStateProperty.all(EdgeInsets.all(14)),
+                        padding: MaterialStateProperty.all(EdgeInsets.all(16)),
                         shape: MaterialStateProperty.all(RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         )),
@@ -436,7 +435,7 @@ class _LoginPageState extends State<LoginPage> {
                             borderRadius: BorderRadius.circular(16),
                             side: BorderSide(
                                 color: Color(bordercol), width: 1.5))),
-                        padding: MaterialStateProperty.all(EdgeInsets.all(12)),
+                        padding: MaterialStateProperty.all(EdgeInsets.all(16)),
                       ),
                     ),
                     SizedBox(
