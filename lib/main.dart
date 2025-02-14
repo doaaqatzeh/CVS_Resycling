@@ -22,17 +22,16 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      home: MainPage(),
       debugShowCheckedModeBanner: false,
-      // initialRoute: '/',
-      // routes: {
-      //   '/': (context) => WelcomPage(),
-      //   '/thankyou': (context) => ThankYouPage(),
-      //   '/verifyemail': (context) => VerifyEmailPage(email: ''),
-      //   '/regesitration': (context) => RegistrationPage(),
-      //   '/login': (context) => LoginPage(),
-      //   '/home': (context) => MainPage(),
-      // },
+      initialRoute: '/',
+      routes: {
+        '/': (context) => WelcomPage(),
+        '/thankyou': (context) => ThankYouPage(),
+        '/verifyemail': (context) => VerifyEmailPage(email: ''),
+        '/regesitration': (context) => RegistrationPage(),
+        '/login': (context) => LoginPage(),
+        '/home': (context) => MainPage(),
+      },
     );
   }
 }
